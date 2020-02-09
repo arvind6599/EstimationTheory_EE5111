@@ -120,6 +120,38 @@ for n_sigma in n_sigma_simulation:
 		h4 = h1 - XFH_XF_inv_AT.dot(A_XFH_XF_inv_AT_inv).dot(A).dot(h1)
 		Eh4 = (iteration)/(iteration + 1) * Eh4 + h4/(iteration + 1)
 		
+		
+		################################### Q5 - LOCATING NON ZERO LOCATIONS #########################
+		A=XF
+		AH=XFH
+		r=y
+		S_omp=[]
+		AS=[]
+
+
+		print(np.shape(A))
+		for k in range(1,k0+1):
+
+			t=np.argmax(AH.dot(r))
+			S_omp.append(t)
+
+			AS.append(A.T[t])
+			print(S_omp)
+
+			A_S_omp=np.ravel(AS).reshape(N,k)
+			A_S_ompH=A_S_omp.T.conjugate()
+
+			print(k,t,np.shape(A_S_ompH))
+
+
+			#Moore - Penrose inverse 
+			ASD=np.linalg.inv(A_S_ompH.dot(A_S_omp)).dot(A_S_ompH)
+			P_k=A_S_omp.dot(ASD)
+			print(np.shape(P_k))
+			r=(np.identity(N)-P_k).dot(y)
+		
+		print(S_omp)
+		
 
 		if iteration == TOTAL_ITERATIONS - 1:
 			print('MSE(h1) = ', np.sum(abs(Eh1-h0)**2)/L)
