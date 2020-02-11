@@ -32,6 +32,8 @@ norm_p = np.sum(p**2)
 # h0 is the true channel impulse response vector
 h0 = ((a + 1j*b)*p)/norm_p	# h[k] = (a[k] + jb[k])p[k] / norm(p)
 
+QPSK_SYMBOLS = [1+1j, -1+1j, 1-1j, -1-1j]
+
 # building the F matrix
 F = np.array([ [ np.exp((np.pi*2j*i*j)/N) for j in range(L)] for i in range(N)])
 
@@ -49,13 +51,12 @@ def plot_channel(hplot, label):
 	plt.stem([(hh[0]).imag for hh in hplot], linefmt='r:', markerfmt='ro', label=label, use_line_collection=True)
 	plt.legend(loc='upper right')
 
-QPSK_SYMBOLS = [1+1j, -1+1j, 1-1j, -1-1j]
-
 # Expectation values:
 Eh1 = np.zeros((L,1), dtype=np.complex128)
 Eh2 = np.zeros((L,1), dtype=np.complex128)
 Eh3 = np.zeros((L,1), dtype=np.complex128)
 Eh4 = np.zeros((L,1), dtype=np.complex128)
+Eh5 = np.zeros((L,1), dtype=np.complex128)
 
 
 for n_sigma in n_sigma_simulation:
@@ -122,36 +123,28 @@ for n_sigma in n_sigma_simulation:
 		
 		
 		################################### Q5 - LOCATING NON ZERO LOCATIONS #########################
-		A=XF
-		AH=XFH
 		r=y
 		S_omp=[]
-		AS=[]
+		A_S_omp=np.zeros((N, 0), dtype=np.complex128)
 
-
-		print(np.shape(A))
-		for k in range(1,k0+1):
-
-			t=np.argmax(AH.dot(r))
+		for k in range(k0):
+			t=np.argmax(XFH.dot(r))
 			S_omp.append(t)
 
-			AS.append(A.T[t])
-			print(S_omp)
-
-			A_S_omp=np.ravel(AS).reshape(N,k)
-			A_S_ompH=A_S_omp.T.conjugate()
-
-			print(k,t,np.shape(A_S_ompH))
-
+			A_S_omp = np.append(A_S_omp, XF[:, t].reshape((N,1)), axis=1) # append column t to AS
+			A_S_ompH = A_S_omp.T.conjugate()
 
 			#Moore - Penrose inverse 
-			ASD=np.linalg.inv(A_S_ompH.dot(A_S_omp)).dot(A_S_ompH)
-			P_k=A_S_omp.dot(ASD)
-			print(np.shape(P_k))
-			r=(np.identity(N)-P_k).dot(y)
-		
-		print(S_omp)
-		
+			# Following method will not be vector optimized as we are going to perform 512 vector multiplications
+			# ASD = np.linalg.inv(A_S_ompH.dot(A_S_omp)).dot(A_S_ompH)
+			# P_k = A_S_omp.dot(ASD)
+			A_S_ompH_A_S_omp_inv = np.linalg.inv(A_S_ompH.dot(A_S_omp))
+			r = y - A_S_omp.dot(A_S_ompH_A_S_omp_inv.dot(A_S_ompH.dot(y))) # Requires only k vector multiplications
+
+		h5 = np.zeros((L,1), dtype=np.complex128); 
+		for ii in S_omp:
+			h5[ii] = h1[ii]
+		Eh5 = (iteration)/(iteration + 1) * Eh5 + h5/(iteration + 1)
 
 		if iteration == TOTAL_ITERATIONS - 1:
 			print('MSE(h1) = ', np.sum(abs(Eh1-h0)**2)/L)
@@ -162,9 +155,12 @@ for n_sigma in n_sigma_simulation:
 			print_channel(Eh3, 'Eh3')
 			print('MSE(h4) = ', np.sum(abs(Eh4-h0)**2)/L)
 			print_channel(Eh4, 'Eh4')
+			print('MSE(h5) = ', np.sum(abs(Eh5-h0)**2)/L)
+			print_channel(Eh5, 'Eh5')
 			plot_channel(h1, 'h1')
 			plot_channel(h2, 'h2')
 			plot_channel(h3_b, 'h3_b')
 			plot_channel(h4, 'h4')
+			plot_channel(h5, 'h5')
 			print('//////////////////////////////////////////////////////////////////')
 			plt.show()
