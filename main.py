@@ -80,8 +80,7 @@ for n_sigma in n_sigma_simulation:
 		################### QUESTION - 2 Least Squares Estimate with sparsity ###########################
 		non_zero_indices = np.arange(L-k0, L)
 		h2 = np.zeros((L,1), dtype=np.complex128); 
-		for ii in non_zero_indices:
-			h2[ii] = h1[ii]
+		h2[non_zero_indices] = h1[non_zero_indices]
 		Eh2 = (iteration)/(iteration + 1) * Eh2 + h2/(iteration + 1)
 
 		######################## QUESTION - 3 Least Squares Estimate Guard Band ##############################
@@ -91,14 +90,6 @@ for n_sigma in n_sigma_simulation:
 
 		X1_FH = X1_F.conjugate().T
 		X1_FH_X1_F_inv = np.linalg.inv(X1_FH.dot(X1_F))
-		# h3_1a = X1_FH_X1_F_inv.dot(X1_FH).dot(y1)
-
-		# h3_2a = np.zeros((L,1)); 
-		# for ii in non_zero_indices:
-		# 	h3_2a[ii] = h3_1a[ii]
-
-		# print_channel(h3_1a, 'Q3. (1a) h_est')
-		# print_channel(h3_2a, 'Q3. (2a) h_est')
 
 		# Applying regularisation
 		X1_FH_X1_F_inv_reg = np.linalg.inv(X1_FH.dot(X1_F) + alpha * np.eye(L))
@@ -135,27 +126,14 @@ for n_sigma in n_sigma_simulation:
 			nc = A[:, t].reshape((N,1)) # new column
 			ncH = nc.conjugate().T
 
-			# A_S_omp = np.append(A_S_omp, A[:, t].reshape((N,1)), axis=1) # append column t to AS
-			# A_S_ompH = A_S_omp.T.conjugate()
-
-			# Moore - Penrose inverse 
-			# Following method will not be vector optimized as we are going to perform 512 vector multiplications
-			# ASD = np.linalg.inv(A_S_ompH.dot(A_S_omp)).dot(A_S_ompH)
-			# P_k = A_S_omp.dot(ASD)
-
-			# A_S_ompH_A_S_omp_inv = np.linalg.inv(A_S_ompH.dot(A_S_omp))
-			# r = y - A_S_omp.dot(A_S_ompH_A_S_omp_inv.dot(A_S_ompH.dot(y))) # Requires only k vector multiplications
-
 			### Using recursive projection matrix formula (requires no inverses)
-
 			P_ortho_nc = P_ortho.dot(nc) 
 			P = P + (P_ortho_nc.dot(ncH.dot(P_ortho))) / np.ravel(ncH.dot(P_ortho_nc))[0]
 			P_ortho = np.identity(N) - P
 			r = P_ortho.dot(y)
 
 		h5 = np.zeros((L,1), dtype=np.complex128); 
-		for ii in S_omp:
-			h5[ii] = h1[ii]
+		h5[S_omp] = h1[S_omp]
 		Eh5 = (iteration)/(iteration + 1) * Eh5 + h5/(iteration + 1)
 
 		if iteration == TOTAL_ITERATIONS - 1:
