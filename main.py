@@ -92,7 +92,7 @@ for n_sigma in n_sigma_simulation:
 		X1_FH_X1_F_inv = np.linalg.inv(X1_FH.dot(X1_F))
 
 		# Applying regularisation
-		X1_FH_X1_F_inv_reg = np.linalg.inv(X1_FH.dot(X1_F) + alpha * np.eye(L))
+		X1_FH_X1_F_inv_reg = X1_FH_X1_F_inv + alpha * np.eye(L)
 		h3_b = X1_FH_X1_F_inv_reg.dot(X1_FH).dot(y1)
 		Eh3 = (iteration)/(iteration + 1) * Eh3 + h3_b/(iteration + 1)
 		
@@ -120,10 +120,10 @@ for n_sigma in n_sigma_simulation:
 		P_ortho = np.identity(N) - P
 
 		for k in range(k0):
-			t = np.argmax(abs(AH.dot(r)))
+			t = np.argmax(abs(XFH.dot(r)))
 			S_omp.append(t)
 
-			nc = A[:, t].reshape((N,1)) # new column
+			nc = XF[:, t].reshape((N,1)) # new column
 			ncH = nc.conjugate().T
 
 			### Using recursive projection matrix formula (requires no inverses)
