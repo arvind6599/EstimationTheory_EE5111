@@ -125,21 +125,33 @@ for n_sigma in n_sigma_simulation:
 		################################### Q5 - LOCATING NON ZERO LOCATIONS #########################
 		r=y
 		S_omp=[]
-		A_S_omp=np.zeros((N, 0), dtype=np.complex128)
+		P = np.zeros((N,N)) # initially empty
+		P_ortho = np.identity(N) - P
 
 		for k in range(k0):
-			t=np.argmax(XFH.dot(r))
+			t = np.argmax(abs(AH.dot(r)))
 			S_omp.append(t)
 
-			A_S_omp = np.append(A_S_omp, XF[:, t].reshape((N,1)), axis=1) # append column t to AS
-			A_S_ompH = A_S_omp.T.conjugate()
+			nc = A[:, t].reshape((N,1)) # new column
+			ncH = nc.conjugate().T
 
-			#Moore - Penrose inverse 
+			# A_S_omp = np.append(A_S_omp, A[:, t].reshape((N,1)), axis=1) # append column t to AS
+			# A_S_ompH = A_S_omp.T.conjugate()
+
+			# Moore - Penrose inverse 
 			# Following method will not be vector optimized as we are going to perform 512 vector multiplications
 			# ASD = np.linalg.inv(A_S_ompH.dot(A_S_omp)).dot(A_S_ompH)
 			# P_k = A_S_omp.dot(ASD)
-			A_S_ompH_A_S_omp_inv = np.linalg.inv(A_S_ompH.dot(A_S_omp))
-			r = y - A_S_omp.dot(A_S_ompH_A_S_omp_inv.dot(A_S_ompH.dot(y))) # Requires only k vector multiplications
+
+			# A_S_ompH_A_S_omp_inv = np.linalg.inv(A_S_ompH.dot(A_S_omp))
+			# r = y - A_S_omp.dot(A_S_ompH_A_S_omp_inv.dot(A_S_ompH.dot(y))) # Requires only k vector multiplications
+
+			### Using recursive projection matrix formula (requires no inverses)
+
+			P_ortho_nc = P_ortho.dot(nc) 
+			P = P + (P_ortho_nc.dot(ncH.dot(P_ortho))) / np.ravel(ncH.dot(P_ortho_nc))[0]
+			P_ortho = np.identity(N) - P
+			r = P_ortho.dot(y)
 
 		h5 = np.zeros((L,1), dtype=np.complex128); 
 		for ii in S_omp:
