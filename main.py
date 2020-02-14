@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-TOTAL_ITERATIONS = 100
+import sys
+TOTAL_ITERATIONS = 10000
 
 # Parameters
 
@@ -16,7 +16,7 @@ n_sigma_simulation = [0.1**0.5, 0.01**0.5]	# noise during estimation
 c_sigma = 0.5 ** 0.5 	# channel parameter
 lambda_ = 0.2			# channel parameter
 
-alpha = 0.1		# regularization
+alpha = 0.1				# regularization
 
 def print_channel(h, text):
 	print(text)
@@ -31,11 +31,13 @@ norm_p = np.sum(p**2)
 
 # h0 is the true channel impulse response vector
 h0 = ((a + 1j*b)*p)/norm_p	# h[k] = (a[k] + jb[k])p[k] / norm(p)
+print_channel(h0, 'h0')
 
 QPSK_SYMBOLS = [1+1j, -1+1j, 1-1j, -1-1j]
 
 # building the F matrix
 F = np.array([ [ np.exp((np.pi*2j*i*j)/N) for j in range(L)] for i in range(N)])
+FH = F.conjugate().T
 
 def plot_channel(hplot, label):
 	plt.figure()
@@ -59,6 +61,15 @@ Eh4 = np.zeros((L,1), dtype=np.complex128)
 Eh5 = np.zeros((L,1), dtype=np.complex128)
 
 
+
+############################## For Question 4 ######################
+A = np.zeros((L, L-3), dtype=np.complex128)
+A[0][0] = 1; A[1][0] = 1; # null space basis vector 1
+A[2][1] = 1; A[3][1] = 1; # null space basis vector 2
+A[4][2] = 1; A[5][2] = 1; # null space basis vector 3
+A[6:,3:] = np.eye(L-6)
+P_A = A.dot(np.linalg.inv(A.T.dot(A))).dot(A.T) # Projection matrix into the required nullspace
+
 for n_sigma in n_sigma_simulation:
 	print('process noise sigma: ', n_sigma)
 	for iteration in range(TOTAL_ITERATIONS):
@@ -66,15 +77,17 @@ for n_sigma in n_sigma_simulation:
 		input_data = np.random.randint(len(QPSK_SYMBOLS), size=N) # to generate the bits
 
 		# generate X matrix
-		X = np.diag([QPSK_SYMBOLS[sym] for sym in input_data])
+		X_elems = np.array([QPSK_SYMBOLS[sym] for sym in input_data]).reshape(N)
+		X = np.diag(X_elems)
 
 		XF = X.dot(F)
 		y = XF.dot(h0) + process_noise
 		XFH = XF.conjugate().T
-		XFH_XF_inv = np.linalg.inv(XFH.dot(XF))
+		# XFH_XF_inv = np.linalg.inv(XFH.dot(XF))
 
 		######################## QUESTION - 1 Least Squares Estimate ####################################
-		h1 = XFH_XF_inv.dot(XFH).dot(y)		# estimate 1
+		X_inv_y = (y.flatten()/X_elems).reshape((N,1))
+		h1 = FH.dot(X_inv_y)/N
 		Eh1 = (iteration)/(iteration + 1) * Eh1 + h1/(iteration + 1)
 
 		################### QUESTION - 2 Least Squares Estimate with sparsity ###########################
@@ -89,10 +102,9 @@ for n_sigma in n_sigma_simulation:
 		y1 = X1_F.dot(h0) + process_noise[gb:-gb]
 
 		X1_FH = X1_F.conjugate().T
-		X1_FH_X1_F_inv = np.linalg.inv(X1_FH.dot(X1_F))
-
 		# Applying regularisation
-		X1_FH_X1_F_inv_reg = X1_FH_X1_F_inv + alpha * np.eye(L)
+		X1_FH_X1_F_inv_reg = np.linalg.inv(X1_FH.dot(X1_F) + alpha * np.eye(L))
+		
 		h3_b = X1_FH_X1_F_inv_reg.dot(X1_FH).dot(y1)
 		Eh3 = (iteration)/(iteration + 1) * Eh3 + h3_b/(iteration + 1)
 		
@@ -101,21 +113,14 @@ for n_sigma in n_sigma_simulation:
 		################### QUESTION - 4 Least Squares Estimate with constraints ##########################
 		# A(h_est) = b; b = [0 0 0]^T
 		# selected entries are zero
-		A = np.zeros((3, L), dtype=np.complex128)
-		A[0][0] = 1; A[0][1] = -1; # h[1] = h[2]
-		A[1][2] = 1; A[1][3] = -1; # h[3] = h[4]
-		A[2][4] = 1; A[2][5] = -1; # h[5] = h[6]
-
 		# Least squares with constraints
-		XFH_XF_inv_AT = XFH_XF_inv.dot(A.T)
-		A_XFH_XF_inv_AT_inv = np.linalg.inv(A.dot(XFH_XF_inv_AT))
-		h4 = h1 - XFH_XF_inv_AT.dot(A_XFH_XF_inv_AT_inv).dot(A).dot(h1)
+		h4 = P_A.dot(h1)
 		Eh4 = (iteration)/(iteration + 1) * Eh4 + h4/(iteration + 1)
 		
 		
 		################################### Q5 - LOCATING NON ZERO LOCATIONS #########################
-		r=y
-		S_omp=[]
+		r = y
+		S_omp = []
 		P = np.zeros((N,N)) # initially empty
 		P_ortho = np.identity(N) - P
 
