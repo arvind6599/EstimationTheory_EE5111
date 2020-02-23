@@ -25,26 +25,3 @@ vals, bins_pos,patch = plt.hist((A_estimated-A)*(N**0.5),bins,normed = True)
 plt.cla()
 plt.plot(bins_pos[:-1]+(bins[1]-bins[0])/2,vals)
 plt.show()
-
-
-
-
-
-"""
-#Old code
-
-E_A_estimated_new = (E_A_estimated*(i-1) + A_estimated)/i
-E_A_Sq_estimated_new = (E_A_Sq_estimated*(i-1) + A_estimated**2)/i
-del_E_A_estimated = np.abs(E_A_estimated_new - E_A_estimated)
-del_E_A_Sq_estimated = np.abs(E_A_Sq_estimated_new - E_A_Sq_estimated)
-E_A_estimated = E_A_estimated_new
-E_A_Sq_estimated = E_A_Sq_estimated_new
-arr_A = np.append(arr_A,A_estimated)
-hist,bins = np.histogram((arr_A-A)*(N**0.5),100)
-print(bins)
-print((np.arange(100)/100)*(bins[100] - bins[0])+(bins[1]+bins[0])/2)
-plt.plot((np.arange(100)/100)*(bins[100] - bins[0])+(bins[1]+bins[0])/2,hist)
-plt.show()
-print("Expected value of the estimator is {}".format(E_A_estimated))
-print("Variance of the estimator is {}".format(E_A_Sq_estimated - E_A_estimated**2))
-"""
