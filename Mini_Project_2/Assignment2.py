@@ -14,9 +14,9 @@ def newton_raphson(x,thresh,gamma):
 	return theta_0
 
 def main():
-	Q_no = 3 # Question number in assignment	
+	Q_no = 1 # Question number in assignment	
 	N_s = [1, 100, 1000, 10000] # Number of samples
-	A = 10 	# DC Value to be estimated
+	A = 1 	# DC Value to be estimated
 	thresh = 0.000001
 			
 	iters = 10000 # Number of iterations run for finding the mean and variance of the estimator 
@@ -55,7 +55,7 @@ def main():
 		
 		n_bins = 30
 		bins = np.linspace(-3*(N*Var_A_estimated)**0.5, 3*(N*Var_A_estimated)**0.5, n_bins)
-		vals, bins_pos,patch = plt.hist((A_est-A)*(N**0.5), bins, density=True)
+		vals, bins_pos,patch = plt.hist((A_est-A)*(N**0.5), bins, density=True, label="N="+str(N))
 		# plt.cla()
 		cdf_vals = np.zeros(vals.shape)
 		cdf_vals[0] = vals[0]
@@ -64,12 +64,10 @@ def main():
 		plt.plot(bins_pos[:-1]+(bins[1]-bins[0])/2, vals, label="N="+str(N))
 		plt.figure('CDFs')
 		plt.plot(bins_pos[:-1]+(bins[1]-bins[0])/2, cdf_vals/cdf_vals[-1],label="N="+str(N))
-		
+
 	plt.figure('PDFs')
-	plt.grid(True)
 	plt.legend(loc='upper right')
 	plt.figure('CDFs')
-	plt.grid(True)
 	plt.legend(loc='upper right')
 	plt.show()
 
