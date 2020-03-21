@@ -151,7 +151,7 @@ def monte(p,n):
 #m=[1,10]
 #n=[10,100,1000,10000]
 
-# EXPT 1
+#Experiment 1
 
 #a
 
@@ -167,7 +167,7 @@ em(data1,pi,p0,q0,m,n)
 
 #b
 data2=generate_data(0.25,0.35,0.6,m,n)
-'''
+
 #initial estimates
 p0=0.45
 q0=0.5
@@ -182,6 +182,7 @@ q0=0.5
 pi=0.25
 em(data2,pi,p0,q0,m,n)
 
+#Experiment 2
 
 #initial estimates
 p0=0.45
@@ -190,7 +191,9 @@ pi=0.5
 em2(data2,pi,p0,q0,m,n)
 
 em2(data2,pi,q0,p0,m,n)
-'''
+
+# Experiment 3
+
 p0=0.45
 q0=0.5
 pi=0.32
