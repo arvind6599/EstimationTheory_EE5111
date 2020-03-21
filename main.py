@@ -141,13 +141,6 @@ def em3(data,pi,p0,q0,m,n,aplha,beta):
 	print("estimates are ",pi,p0,q0)
 
 
-'''
-def monte(p,n):
-	k=np.zeros(n)
-	for i in range(n):
-		k[i]=signum(random.random()-p)
-	print("probablity = ",np.sum(k)/n)
-'''
 #m=[1,10]
 #n=[10,100,1000,10000]
 
