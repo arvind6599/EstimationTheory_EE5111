@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import math
+
 def signum(x):
 	if(x>=0):
 		return 0
