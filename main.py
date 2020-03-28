@@ -99,7 +99,7 @@ def em2(data,pi,p0,q0,m,n):
 		q0=q1
 		print("probablities {}".format((p0,q0)), end="\r")
 
-	print("estimates are ",pi,p0,q0)
+	print("estimates are pi = ",pi,"p = ",p0,"q = ",q0)
 
 # em with beta prior for class probabilities
 
@@ -129,7 +129,7 @@ def em3(data,pi,p0,q0,m,n,aplha,beta):
 		#update rules with pi as well
 		p1=s1/np.sum(u)/m
 		q1=s2/(n-np.sum(u))/m
-		pi1=(sum(u)+n*(alpha-1))/(n*(alpha+beta-1))
+		pi1=(sum(u)+(alpha-1))/(n+alpha+beta-2)
 
 		change=change=max(abs(p1-p0),abs(q1-q0),abs(pi1-pi))
 
@@ -141,10 +141,17 @@ def em3(data,pi,p0,q0,m,n,aplha,beta):
 	print("estimates are ",pi,p0,q0)
 
 
+'''
+def monte(p,n):
+	k=np.zeros(n)
+	for i in range(n):
+		k[i]=signum(random.random()-p)
+	print("probablity = ",np.sum(k)/n)
+'''
 #m=[1,10]
 #n=[10,100,1000,10000]
 
-#Experiment 1
+# EXPT 1
 
 #a
 
@@ -153,6 +160,8 @@ n=10000
 
 data1=generate_data(0.5,0.35,0.6,m,n)
 #initial estimates
+
+print(" Experiment 1 a")
 p0=0.45
 q0=0.5
 pi=0.5
@@ -162,6 +171,9 @@ em(data1,pi,p0,q0,m,n)
 data2=generate_data(0.25,0.35,0.6,m,n)
 
 #initial estimates
+
+print(" Experiment 1 b")
+
 p0=0.45
 q0=0.5
 pi=0.5
@@ -170,23 +182,24 @@ em(data2,pi,p0,q0,m,n)
 #c
 
 #initial estimates
+print(" Experiment 1 c")
 p0=0.45
 q0=0.5
 pi=0.25
 em(data2,pi,p0,q0,m,n)
 
-#Experiment 2
 
 #initial estimates
+print(" Experiment 2 a")
 p0=0.45
 q0=0.5
 pi=0.5
 em2(data2,pi,p0,q0,m,n)
 
+print(" Experiment 2 b")
 em2(data2,pi,q0,p0,m,n)
 
-# Experiment 3
-
+print(" Experiment 3")
 p0=0.45
 q0=0.5
 pi=0.32
