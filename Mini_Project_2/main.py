@@ -15,7 +15,7 @@ def newton_raphson(x,thresh,gamma):
 
 def main():
 	Q_no = 3 # Question number in assignment	
-	N_s = [1, 100, 1000, 10000] # Number of samples
+	N_s = [10] # Number of samples
 	A = 10 	# DC Value to be estimated
 	thresh = 0.000001
 			
