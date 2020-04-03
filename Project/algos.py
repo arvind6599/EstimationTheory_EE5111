@@ -25,12 +25,14 @@ class Solver:
 		self.sigma = sigma
 		self.alpha = alpha
 	
-	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.0], K=2):
+	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[0.7, 0.8, 0.9, 1.0], K=2):
 		"""
 			Deterministic Annealing EM Algorithm for k=2 Gaussians
 		"""
 		N = X.size
 		errors = []
+		alpha_ests = []
+		beta_step = []
 		steps = 0
 		# Initial estimates
 		if alpha_est is None:
@@ -42,7 +44,8 @@ class Solver:
 			cov = np.sum((X-sample_mean)**2)/N
 			sigma_est = [cov, cov]
 
-		for beta in betas:
+		for beta in betas:	
+			print('Maximization for beta = {}'.format(beta))
 			llh_01 = likelihood(alpha_est, X, mu_est, sigma_est, 1)
 			llh_1 = likelihood(alpha_est, X, mu_est, sigma_est, beta)
 			h = (alpha_est**beta)*P_gaussian(X, mu_est[0], sigma_est[0], beta)/llh_1
@@ -50,8 +53,8 @@ class Solver:
 			while np.any(tolerance >= thresh) and steps <= 100000:
 				steps += 1
 				# print("Step {}".format(steps))
-				llh_00 = llh_01
-				llh_0 = llh_1
+				llh_00 = llh_01.copy()
+				llh_0 = llh_1.copy()
 
 				h_tot = np.sum(h)
 				mu_est[0] = np.sum(h*X)/h_tot
@@ -64,10 +67,13 @@ class Solver:
 				llh_01 = likelihood(alpha_est, X, mu_est, sigma_est, 1)
 
 				h = (alpha_est**beta)*P_gaussian(X, mu_est[0], sigma_est[0], beta)/llh_1
-				tolerance = np.abs((llh_01-llh_00)/llh_00)
+				tolerance = np.abs((llh_01-llh_00)/llh_01)
 				errors.append(ds_error(self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est))
+				alpha_ests.append(alpha_est)
+			beta_step.append((beta, steps-1))
+			# print('Beta: {} --- alpha_est: {}, mu_est: {}, sigma_est: {}'.format(beta, alpha_ests, mu_est, sigma_est))
 
-		return alpha_est, mu_est, sigma_est, errors, steps
+		return alpha_ests, mu_est, sigma_est, errors, steps, beta_step
 
 	def EM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None):
 		"""
