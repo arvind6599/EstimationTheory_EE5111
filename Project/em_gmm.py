@@ -22,7 +22,7 @@ colors = ['red', 'pink', 'brown']
 for mu_iter in mus:
 	mu = [-mu_iter, mu_iter]
 	errorss_daem = []; alphass_daem = []; muss_daem = [];
-	errorss_daem = []; alphass_em = []; muss_em = []
+	errorss_em = []; alphass_em = []; muss_em = []
 	bs = []
 
 	for alpha in alphas:
@@ -32,14 +32,14 @@ for mu_iter in mus:
 		print('Actual:')
 		print('alpha: {}, mu: {}, sigma: {}'.format(alpha, mu, sigma))
 		alpha_est_daem, mu_est_daem, sigma_est_daem, errors_daem, steps, beta_step, likelihoods_daem, actual_likelihood_daem = solver.DAEM_GMM(X=X, thresh=1e-6)
-		errorss_daem.append(errorss_daem)
+		errorss_daem.append(errors_daem)
 		alphass_daem.append(alpha_est_daem)
 		muss_daem.append(mu_est_daem)
 		bs.append(beta_step)
 		print('DAEM')
 		print('Steps: {}, alpha_est: {}, mu_est: {}, sigma_est: {}'.format(steps, alpha_est_daem[-1], mu_est_daem[-1], sigma_est_daem))
 		alpha_est_em, mu_est_em, sigma_est_em, errors_em, steps, __, likelihoods_em, actual_likelihood_em = solver.EM_GMM(X=X, thresh=1e-10)
-		errorss_em.append(errorss_em)
+		errorss_em.append(errors_em)
 		alphass_em.append(alpha_est_em)
 		muss_em.append(mu_est_em)
 		print('EM')
