@@ -75,10 +75,10 @@ for mu_iter in mus:
 	muss_daem = np.array(muss_daem)
 	plt.title(r'DAEM, $\hat{\mu}$ vs. Iterations, $(\mu_1,\mu_2)=($'+str(-mu_iter)+','+str(mu_iter)+')')
 	for i, alpha in enumerate(alphas):
-		plt.plot(muss_daem[i][:,0], muss_daem[i][:,1], 'bx-', label=r'$\alpha=$'+str(alpha))
-		plt.plot(muss_daem[i][-1][0], muss_daem[i][-1][1],'x-', color='black')
+		plt.plot(muss_daem[i][:,0], muss_daem[i][:,1], 'yx-', label=r'$\alpha=$'+str(alpha))
 		for _bs in bs[i]:
 			plt.plot(muss_daem[i][_bs[1],0], muss_daem[i][_bs[1],1], 'rx') #, label=r'$\beta=$'+str(_bs[0]))
+		plt.plot(muss_daem[i][-1][0], muss_daem[i][-1][1],'x-', color='green')
 	plt.grid(True)
 	plt.legend(loc='upper right')
 
@@ -114,8 +114,8 @@ for mu_iter in mus:
 	muss_em = np.array(muss_em)
 	plt.title(r'EM, $\hat{\mu}$ vs. Iterations, $(\mu_1,\mu_2)=($'+str(-mu_iter)+','+str(mu_iter)+')')
 	for i, alpha in enumerate(alphas):
-		plt.plot(muss_em[i][:, 0], muss_em[i][:, 1], 'gx-', label=r'$\alpha=$'+str(alpha))
-		plt.plot(muss_em[i][-1][0], muss_em[i][-1][1],'x-', color='black')
+		plt.plot(muss_em[i][:, 0], muss_em[i][:, 1], 'yx-', label=r'$\alpha=$'+str(alpha))
+		plt.plot(muss_em[i][-1][0], muss_em[i][-1][1],'x-', color='green')
 	plt.grid(True)
 	plt.legend(loc='upper right')
 
