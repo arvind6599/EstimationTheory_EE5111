@@ -60,7 +60,7 @@ for mu_iter in mus:
 	plt.figure('DAEM alpha')
 	plt.title(r'DAEM, $\hat{\alpha}$ vs. Iterations, $(\mu_1,\mu_2)=($'+str(-mu_iter)+','+str(mu_iter)+')')
 	for i, alpha in enumerate(alphas):
-		plt.plot(alphas_daem[i], #'x-', 
+		plt.plot(alphass_daem[i], #'x-', 
 			label=r'$\alpha=$'+str(alpha))
 		for _bs in bs[i]:
 			plt.axvline(x=_bs[1], color=colors[i], ls=':', lw=1, label=str(_bs[0]))
