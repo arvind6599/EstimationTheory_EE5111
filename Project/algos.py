@@ -25,7 +25,7 @@ class Solver:
 		self.sigma = sigma
 		self.alpha = alpha
 	
-	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[0.7, 0.8, 0.9, 1.0], K=2):
+	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[0.1,0.6,1.2,1], K=2):
 		"""
 			Deterministic Annealing EM Algorithm for k=2 Gaussians
 		"""
@@ -84,13 +84,13 @@ class Solver:
 
 				errors.append(ds_error(self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est))
 				likelihoods.append(np.sum(np.log(llh_01)))
-				alpha_ests.append(alpha_est); mu_ests.append(mu_est)
+				alpha_ests.append(alpha_est); mu_ests.append(np.array(mu_est))
 
 				# Break based on daem error
-				if beta!=1 and np.abs((errors[-1]-errors[-2]))<1e-1*3:
+				if beta!=1 and np.abs((errors[-1]-errors[-2])/errors[-1])<thresh:
 					break
-				elif np.abs((errors[-1]-errors[-2]))<1e-8:
-					break	
+				# elif np.abs((errors[-1]-errors[-2])/errors[-1])<1e-8:
+				# 	break	
 
 			beta_step.append((beta, steps-1))
 			# print('Beta: {} --- alpha_est: {}, mu_est: {}, sigma_est: {}'.format(beta, alpha_ests, mu_est, sigma_est))
