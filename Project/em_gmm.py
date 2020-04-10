@@ -6,8 +6,8 @@ N = 1000		# number of samples
 K = 2			# number of mixed Gaussians
 mus = [10]		
 sigma = np.array([		# covariance matrices
-	np.array([6.25]), 
-	np.array([6.25])
+	np.array([[6.25]]), 
+	np.array([[6.25]])
 ])	
 
 def toss(alpha):
@@ -17,7 +17,7 @@ def toss(alpha):
 	else:
 		return 1
 
-alphas = [0.6] #np.linspace(0.6, 0.6, 1) # mixing coefficients
+alphas = [0.2] #np.linspace(0.6, 0.6, 1) # mixing coefficients
 
 colors = ['red', 'pink', 'brown']
 
@@ -31,23 +31,24 @@ for mu_iter in mus:
 	for alpha in alphas:
 		solver = Solver(alpha=np.array([alpha, 1-alpha]), mu=mu, sigma=sigma)
 
-		X = np.array([np.random.normal(mu[toss(alpha)], sigma[toss(alpha)]**0.5) for j in range(N)]).reshape(N,1,1)
+		# Xi is 1 dimensional. N data points
+		X = np.array([np.random.normal(mu[toss(alpha)], sigma[toss(alpha)]**0.5) for j in range(N)]).reshape(1, N)
 
 		print('Actual:')
-		print('alpha: {}, mu: {}, sigma: {}'.format(alpha, mu, sigma))
+		print('alpha: {}\nmu:\n{}\nsigma:\n{}\n\n'.format(alpha, mu, sigma))
 		alpha_est_daem, mu_est_daem, sigma_est_daem, errors_daem, steps, beta_step, likelihoods_daem, actual_likelihood_daem = solver.DAEM_GMM(X=X, thresh=1e-6, K=2)
 		errorss_daem.append(errors_daem)
 		alphass_daem.append(alpha_est_daem)
 		muss_daem.append(mu_est_daem)
 		bs.append(beta_step)
 		print('DAEM')
-		print('Steps: {}, alpha_est: {}, mu_est: {}, sigma_est: {}'.format(steps, alpha_est_daem[-1], mu_est_daem[-1], sigma_est_daem))
+		print('Steps:\n{}\n alpha_est: {}\nmu_est:\n{}\nsigma_est:\n{}\n\n'.format(steps, alpha_est_daem[-1], mu_est_daem[-1], sigma_est_daem))
 		alpha_est_em, mu_est_em, sigma_est_em, errors_em, steps, __, likelihoods_em, actual_likelihood_em = solver.EM_GMM(X=X, thresh=1e-10)
 		errorss_em.append(errors_em)
 		alphass_em.append(alpha_est_em)
 		muss_em.append(mu_est_em)
 		print('EM')
-		print('Steps: {}, alpha_est: {}, mu_est: {}, sigma_est: {}'.format(steps, alpha_est_em[-1], mu_est_em[-1], sigma_est_em))
+		print('Steps:\n{}\nalpha_est: {}\nmu_est:\n{}\nsigma_est:\n{}\n\n'.format(steps, alpha_est_em[-1], mu_est_em[-1], sigma_est_em))
 		print()
 '''
 

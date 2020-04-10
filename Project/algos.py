@@ -1,18 +1,22 @@
+import time
 import numpy as np 
 
 def P_gaussian(x, mu, sigma, beta):
-	N, n, hx = x.shape
-	if hx != 1:
-		print('Wrong dimensions... X needs to be an N-length array of n x 1 vectors')
-		return	
+	n, N = x.shape
 	if n > 1:
 		wsig, vsig = np.linalg.eig(sigma)
 		sig_inv = vsig.T.dot(np.diag(1/wsig).dot(vsig)) # sigma inverse
 	else:
-		wsig = np.array([sigma]); vsig = np.array([1])
+		wsig = sigma
 		sig_inv = 1/sigma
-		
-	return np.array([(((1/((2*np.pi)**n/2)*abs(np.prod(wsig)))*np.exp(-((x[i]-mu).T.dot(sig_inv.dot(x[i]-mu)))/2))**beta) for i in range(N)])
+	
+	x_mu = x - mu
+	xx = sig_inv[:, 0].reshape((n, 1)) * x_mu[0] 
+	for i in range(1,n):
+		xx += sig_inv[:, i].reshape((n, 1)) * x_mu[i]
+	exp_arg = -(x_mu * xx)/ 2
+
+	return ((1/((2*np.pi)**n/2)*(abs(np.prod(wsig)))**0.5)*np.exp(exp_arg)**beta)
 
 def likelihood(alphas, x, mus, sigmas, beta):
 	ll = 0
@@ -42,16 +46,13 @@ class Solver:
 		self.sigma = sigma
 		self.alpha = alpha
 	
-	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[0.8,1.], K=2):
+	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[1.], K=2):
 		"""
 			Deterministic Annealing EM Algorithm for k n-dimensional Gaussians
 
-			X is an N-length array of Xis; Xi is an n-dimensional vector
+			X.shape = n x N. Xi is n-dimensional. N data points 
 		"""
-		N, n, hx = X.shape
-		if hx != 1:
-			print('Wrong dimensions... X needs to be an N-length array of n x 1 vectors')
-			return
+		n, N = X.shape
 
 		errors = []
 		alpha_ests = []; mu_ests=[]; likelihoods = []
@@ -62,12 +63,13 @@ class Solver:
 		if alpha_est is None:
 			alpha_est = np.array([1./K for j in range(K)])
 		if mu_est is None:
-			mu_est = [X[int(np.random.random()*N)] for j in range(K)]
+			mu_est = [X[:, int(np.random.random()*N)].reshape((n,1)) for j in range(K)]
 		if sigma_est is None:
 			sample_mean = np.sum(X, axis=0)/N
-			cov = (X[0]-sample_mean).dot((X[0]-sample_mean).T)
-			for i in range(1, N):
-				cov += (X[i]-sample_mean).dot((X[i]-sample_mean).T)
+			X_mu = X - sample_mean
+			cov = np.zeros((n,n))
+			for i in range(n):
+				cov[i] += np.sum(X_mu[i]*X_mu, axis=1)
 			cov /= N
 			sigma_est = [cov for j in range(K)]
  
@@ -98,15 +100,16 @@ class Solver:
 
 				for k in range(K):
 					h_tot_k = np.sum(h[k])
-					mu_est[k] = np.sum(h[k]*X, axis=0)/h_tot_k
+					mu_est[k] = np.sum(h[k]*X, axis=1).reshape((n, 1))/h_tot_k
 
 					# Perturb the mu estimates so they split
-					if beta!=1:
-						mu_est[k] += np.random.normal(0, 1)
+					# if beta!=1:
+					# 	mu_est[k] += np.random.normal(0, 1)
 
-					h_X_mu = h[k]*(X-mu_est[k])
-					for i in range(N):
-						sigma_est[k] += (h_X_mu[i]*(X[i]-mu_est[k]).T)
+					X_mu = X - mu_est[k]
+					h_X_mu = h[k]*X_mu
+					for i in range(n):
+						sigma_est[k][i] = np.sum(X_mu[i]*h_X_mu, axis=1)
 					sigma_est[k] /= h_tot_k
 
 					alpha_est[k] = h_tot_k/h_tot
