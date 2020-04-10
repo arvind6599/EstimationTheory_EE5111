@@ -4,8 +4,11 @@ from algos import Solver
 
 N = 1000		# number of samples
 K = 2			# number of mixed Gaussians
-mus = [7]		# means of the mixed Gaussians
-sigma = [2.5, 2.5]		# std deviation
+mus = [10]		
+sigma = np.array([		# covariance matrices
+	np.array([6.25]), 
+	np.array([6.25])
+])	
 
 def toss(alpha):
 	x = np.random.random()
@@ -14,24 +17,25 @@ def toss(alpha):
 	else:
 		return 1
 
-alphas = [0.025] #np.linspace(0.6, 0.6, 1) # mixing coefficients
+alphas = [0.6] #np.linspace(0.6, 0.6, 1) # mixing coefficients
 
 colors = ['red', 'pink', 'brown']
 
 
 for mu_iter in mus:
-	mu = [-mu_iter, mu_iter]
+	mu = np.array([-mu_iter, mu_iter])
 	errorss_daem = []; alphass_daem = []; muss_daem = [];
 	errorss_em = []; alphass_em = []; muss_em = []
 	bs = []
 
 	for alpha in alphas:
-		solver = Solver(alpha=alpha, mu=mu, sigma=sigma)
+		solver = Solver(alpha=np.array([alpha, 1-alpha]), mu=mu, sigma=sigma)
 
-		X = np.array([np.random.normal(mu[toss(alpha)], sigma[toss(alpha)]) for j in range(N)])
+		X = np.array([np.random.normal(mu[toss(alpha)], sigma[toss(alpha)]**0.5) for j in range(N)]).reshape(N,1,1)
+
 		print('Actual:')
 		print('alpha: {}, mu: {}, sigma: {}'.format(alpha, mu, sigma))
-		alpha_est_daem, mu_est_daem, sigma_est_daem, errors_daem, steps, beta_step, likelihoods_daem, actual_likelihood_daem = solver.DAEM_GMM(X=X, thresh=1e-6)
+		alpha_est_daem, mu_est_daem, sigma_est_daem, errors_daem, steps, beta_step, likelihoods_daem, actual_likelihood_daem = solver.DAEM_GMM(X=X, thresh=1e-6, K=2)
 		errorss_daem.append(errors_daem)
 		alphass_daem.append(alpha_est_daem)
 		muss_daem.append(mu_est_daem)
@@ -45,7 +49,7 @@ for mu_iter in mus:
 		print('EM')
 		print('Steps: {}, alpha_est: {}, mu_est: {}, sigma_est: {}'.format(steps, alpha_est_em[-1], mu_est_em[-1], sigma_est_em))
 		print()
-
+'''
 
 	################## DAEM PLOTS ###############################
 
@@ -144,3 +148,4 @@ for mu_iter in mus:
 # plt.grid(True)
 # plt.legend(loc='upper right')
 # plt.show()
+'''
