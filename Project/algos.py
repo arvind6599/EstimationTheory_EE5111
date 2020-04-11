@@ -1,4 +1,3 @@
-import time
 import numpy as np 
 
 def P_gaussian(x, mu, sigma, beta):
@@ -10,8 +9,7 @@ def P_gaussian(x, mu, sigma, beta):
 	for i in range(1,n):
 		xx += sig_inv[:, i].reshape((n, 1)) * x_mu[i]
 	exp_arg = -(x_mu * xx)/ 2
-
-	return ((1/((2*np.pi)**n/2)*(abs(np.prod(wsig)))**0.5)*np.exp(exp_arg)**beta)
+	return ((1/(((2*np.pi)**n)*abs(np.prod(wsig)))**0.5)*np.exp(exp_arg)**beta)
 
 def likelihood(alphas, x, mus, sigmas, beta):
 	ll = 0
@@ -47,7 +45,7 @@ class Solver:
 		self.sigma = sigma
 		self.alpha = alpha
 	
-	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[1.], K=2):
+	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[1.0], K=2):
 		"""
 			Deterministic Annealing EM Algorithm for k n-dimensional Gaussians
 
@@ -74,10 +72,13 @@ class Solver:
 				cov[i] += np.sum(X_mu[i]*X_mu, axis=1)
 			cov /= N
 			sigma_est = [cov for j in range(K)]
+
  
 		actual_likelihood = np.sum(np.log(likelihood(self.alpha, X, self.mu, self.sigma, 1))) # With actual parameters
 	
 		errors.append(ds_error(n, K, self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est)) # error of first estimate
+		likelihoods.append(np.sum(np.log(likelihood(alpha_est, X, mu_est, sigma_est, 1))))
+		alpha_ests.append(np.array(alpha_est)); mu_ests.append(np.array(mu_est))
 
 		for beta in betas:	
 			print('Maximization for beta = {}'.format(beta))
@@ -85,8 +86,6 @@ class Solver:
 			llh_1 = likelihood(alpha_est, X, mu_est, sigma_est, beta)
 
 			# define h[k, i] = probability that xi belongs to class k
-			# h will be a (K, N, 1, 1)  dimensional array
-			# This is the shape for easy multiplication with dataset X
 			h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
 			
 			tolerance = np.ones(N)
@@ -104,9 +103,9 @@ class Solver:
 					h_tot_k = np.sum(h[k])
 					mu_est[k] = np.sum(h[k]*X, axis=1).reshape((n, 1))/h_tot_k
 
-					# Perturb the mu estimates so they split
-					# if beta!=1:
-					# 	mu_est[k] += np.random.normal(0, 1)
+					#Perturb the mu estimates so they split
+					if beta!=1:
+						mu_est[k] += np.random.normal(0, 1e-2)
 
 					X_mu = X - mu_est[k]
 					h_X_mu = h[k]*X_mu
@@ -120,6 +119,7 @@ class Solver:
 				llh_01 = likelihood(alpha_est, X, mu_est, sigma_est, 1)
 
 				h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
+
 				tolerance = np.abs((llh_01-llh_00)/llh_01)
 
 				errors.append(ds_error(n, K, self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est))
