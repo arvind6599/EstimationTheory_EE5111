@@ -3,13 +3,8 @@ import numpy as np
 
 def P_gaussian(x, mu, sigma, beta):
 	n, N = x.shape
-	if n > 1:
-		wsig, vsig = np.linalg.eig(sigma)
-		sig_inv = vsig.T.dot(np.diag(1/wsig).dot(vsig)) # sigma inverse
-	else:
-		wsig = sigma
-		sig_inv = 1/sigma
-	
+	wsig, vsig = np.linalg.eig(sigma)
+	sig_inv = vsig.T.dot(np.diag(1/wsig).dot(vsig)) # sigma inverse
 	x_mu = x - mu
 	xx = sig_inv[:, 0].reshape((n, 1)) * x_mu[0] 
 	for i in range(1,n):
@@ -25,18 +20,24 @@ def likelihood(alphas, x, mus, sigmas, beta):
 		ll += (alphas[k]**beta)*P_gaussian(x, mus[k], sigmas[k], beta)
 	return ll
 
-def ds_error(alpha, mu, sigma, alpha_est, mu_est, sigma_est):
-	################ NEEEEDSSS CHANGING #####################
-	###### HAVEN'T DONE THISSSS #############################
+def ds_error(n, K, alpha, mu, sigma, alpha_est, mu_est, sigma_est):
+	def val(e):
+		return e[0]
+	# for matching
+	alpha = [(alpha[k], k) for k in range(K)]
+	alpha_est = [(alpha_est[k], k) for k in range(K)]
+	alpha.sort(key=val)
+	alpha_est.sort(key=val)
+
 	# Symmetric KL divergence
-	if abs(1 - alpha - alpha_est) < abs(alpha - alpha_est):
-		mu_est = [mu_est[1], mu_est[0]]
-		sigma_est = [sigma_est[1], sigma_est[0]]
 	err = 0
-	for i in range(len(mu)):
-		err += 0.5*((sigma[i]/sigma_est[i])**2 + (sigma_est[i]/sigma[i])**2)
-		err += 0.5*((mu_est[i] - mu[i])*(1/sigma[i]**2 + 1/sigma_est[i]**2)*(mu_est[i] - mu[i]))
-		err -= 1 # dimension
+	for i in range(K):
+		k = alpha[i][1]; k1 = alpha_est[i][1]
+		sig_inv_k = np.linalg.inv(sigma[k])
+		sig_est_inv_k = np.linalg.inv(sigma_est[k1])
+		err += 0.5*(np.trace(sig_inv_k.dot(sigma_est[k1]) + sig_est_inv_k.dot(sigma[k])))
+		err += 0.5*((mu_est[k1] - mu[k]).T.dot((sig_inv_k + sig_est_inv_k).dot(mu_est[k1] - mu[k])))[0][0]
+		err -= n # dimension
 	return err
 
 class Solver:
@@ -64,6 +65,7 @@ class Solver:
 			alpha_est = np.array([1./K for j in range(K)])
 		if mu_est is None:
 			mu_est = [X[:, int(np.random.random()*N)].reshape((n,1)) for j in range(K)]
+			print(mu_est)
 		if sigma_est is None:
 			sample_mean = np.sum(X, axis=0)/N
 			X_mu = X - sample_mean
@@ -75,7 +77,7 @@ class Solver:
  
 		actual_likelihood = np.sum(np.log(likelihood(self.alpha, X, self.mu, self.sigma, 1))) # With actual parameters
 	
-		#errors.append(ds_error(self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est)) # error of first estimate
+		errors.append(ds_error(n, K, self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est)) # error of first estimate
 
 		for beta in betas:	
 			print('Maximization for beta = {}'.format(beta))
@@ -91,7 +93,7 @@ class Solver:
 			if beta == 1:
 				thresh = 1e-10
 
-			while np.any(tolerance >= thresh) and steps <= 100000:
+			while np.any(tolerance >= thresh) and steps <= 10000:
 				steps += 1
 				print("Step {}".format(steps), end='\r')
 				llh_00 = llh_01.copy()
@@ -120,9 +122,9 @@ class Solver:
 				h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
 				tolerance = np.abs((llh_01-llh_00)/llh_01)
 
-				#errors.append(ds_error(self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est))
+				errors.append(ds_error(n, K, self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est))
 				likelihoods.append(np.sum(np.log(llh_01)))
-				alpha_ests.append(alpha_est); mu_ests.append(np.array(mu_est))
+				alpha_ests.append(np.array(alpha_est)); mu_ests.append(np.array(mu_est))
 			print("Steps {}".format(steps))
 			beta_step.append((beta, steps-1))
 
