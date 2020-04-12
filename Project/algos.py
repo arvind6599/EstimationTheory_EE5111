@@ -9,7 +9,7 @@ def P_gaussian(x, mu, sigma, beta):
 	for i in range(1,n):
 		xx += sig_inv[:, i].reshape((n, 1)) * x_mu[i]
 	exp_arg = -(x_mu * xx)/ 2
-	return ((1/(((2*np.pi)**n)*abs(np.prod(wsig)))**0.5)*np.exp(exp_arg)**beta)
+	return ((1/(((2*np.pi)**n)*abs(np.prod(wsig)))**0.5)*np.exp(exp_arg))**beta
 
 def likelihood(alphas, x, mus, sigmas, beta):
 	ll = 0
@@ -96,6 +96,10 @@ class Solver:
 
 			tolerance = np.ones(N)
 			tolerance_history = np.ones(history_length)
+
+			for k in range(K):
+				mu_est[k] += np.random.randn(n, 1)
+			
 			if beta == 1:
 				thresh = 1e-10
 
