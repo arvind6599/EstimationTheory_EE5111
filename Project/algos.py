@@ -87,11 +87,13 @@ class Solver:
 			llh_1 = likelihood(alpha_est, X, mu_est, sigma_est, beta)
 
 			# define h[k, i] = probability that xi belongs to class k
-			# h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
+			h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
+
 			# however, the following is being done for numerical stability
-			h = np.array([(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K-1)])
-			h = np.append(h, [(1 - np.sum(h, axis=1))], axis=0)
-			
+			# h = np.array([(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K-1)])
+			# h = np.append(h, [(1 - np.sum(h, axis=1))], axis=0)
+			# NOT NEEDED ^^^^
+
 			tolerance = np.ones(N)
 			tolerance_history = np.ones(history_length)
 			if beta == 1:
@@ -118,12 +120,8 @@ class Solver:
 					for i in range(n):
 						sigma_est[k][i] = np.sum(X_mu[i]*h_X_mu, axis=1)
 					sigma_est[k] /= h_tot_k
-
-					# for numerical stability
-					if k == K-1:
-						alpha_est[k] = 1 - np.sum(alpha_est[:-1])
-					else:
-						alpha_est[k] = h_tot_k/N
+					
+					alpha_est[k] = h_tot_k/N
 
 				llh_1 = likelihood(alpha_est, X, mu_est, sigma_est, beta)
 				llh_01 = likelihood(alpha_est, X, mu_est, sigma_est, 1)
