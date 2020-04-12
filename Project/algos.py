@@ -45,7 +45,8 @@ class Solver:
 		self.sigma = sigma
 		self.alpha = alpha
 	
-	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[1.0], K=2):
+	def DAEM_GMM(self, X, thresh, mu_est=None, sigma_est=None, alpha_est=None, betas=[0.1, 0.6, 1.2, 1.0], 
+					K=2, history_length=100, tolerance_history_thresh=1e-6):
 		"""
 			Deterministic Annealing EM Algorithm for k n-dimensional Gaussians
 
@@ -86,26 +87,31 @@ class Solver:
 			llh_1 = likelihood(alpha_est, X, mu_est, sigma_est, beta)
 
 			# define h[k, i] = probability that xi belongs to class k
-			h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
+			# h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
+			# however, the following is being done for numerical stability
+			h = np.array([(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K-1)])
+			h = np.append(h, [(1 - np.sum(h, axis=1))], axis=0)
 			
 			tolerance = np.ones(N)
+			tolerance_history = np.ones(history_length)
 			if beta == 1:
 				thresh = 1e-10
 
-			while np.any(tolerance >= thresh) and steps <= 10000:
+			while tolerance_history[-1] >= thresh and steps <= 5000:
 				steps += 1
 				print("Step {}".format(steps), end='\r')
 				llh_00 = llh_01.copy()
 				llh_0 = llh_1.copy()
-				h_tot = np.sum(h)
+				mu_prev = mu_est.copy()
 
 				for k in range(K):
 					h_tot_k = np.sum(h[k])
 					mu_est[k] = np.sum(h[k]*X, axis=1).reshape((n, 1))/h_tot_k
 
-					#Perturb the mu estimates so they split
-					if beta!=1:
-						mu_est[k] += np.random.normal(0, 1e-2)
+					# Perturb the mu estimates so they split
+					# if the max change in the past 100 iterations is not much then
+					if np.max(tolerance_history) <= tolerance_history_thresh:
+						mu_est[k] += np.random.randn(n, 1)
 
 					X_mu = X - mu_est[k]
 					h_X_mu = h[k]*X_mu
@@ -113,17 +119,25 @@ class Solver:
 						sigma_est[k][i] = np.sum(X_mu[i]*h_X_mu, axis=1)
 					sigma_est[k] /= h_tot_k
 
-					alpha_est[k] = h_tot_k/h_tot
+					# for numerical stability
+					if k == K-1:
+						alpha_est[k] = 1 - np.sum(alpha_est[:-1])
+					else:
+						alpha_est[k] = h_tot_k/N
 
 				llh_1 = likelihood(alpha_est, X, mu_est, sigma_est, beta)
 				llh_01 = likelihood(alpha_est, X, mu_est, sigma_est, 1)
 
-				h = [(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K)]
+				h = np.array([(alpha_est[k]**beta)*P_gaussian(X, mu_est[k], sigma_est[k], beta)/llh_1 for k in range(K-1)])
+				h = np.append(h, [(1 - np.sum(h, axis=1))], axis=0)
 
-				tolerance = np.abs((llh_01-llh_00)/llh_01)
+				log_ll0 = np.log(llh_00)
+				log_ll1 = np.log(llh_01)
+				tolerance = np.abs((log_ll0-log_ll1)/log_ll1)
+				tolerance_history = np.append(tolerance_history[1:], [np.max(tolerance)])
 
 				errors.append(ds_error(n, K, self.alpha, self.mu, self.sigma, alpha_est, mu_est, sigma_est))
-				likelihoods.append(np.sum(np.log(llh_01)))
+				likelihoods.append(np.sum(log_ll1))
 				alpha_ests.append(np.array(alpha_est)); mu_ests.append(np.array(mu_est))
 			print("Steps {}".format(steps))
 			beta_step.append((beta, steps-1))

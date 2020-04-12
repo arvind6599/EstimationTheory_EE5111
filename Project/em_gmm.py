@@ -17,7 +17,7 @@ def toss(alpha):
 	else:
 		return 1
 
-alphas = [0.8] #np.linspace(0.6, 0.6, 1) # mixing coefficients
+alphas = [0.975] #np.linspace(0.6, 0.6, 1) # mixing coefficients
 
 colors = ['red', 'pink', 'brown']
 
